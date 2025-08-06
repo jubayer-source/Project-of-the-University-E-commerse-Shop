@@ -24,8 +24,19 @@ struct Shops {
     int first, second, third, fourth;
 };
 
+// New structure for items in the cart
+struct CartItem {
+    char name[50];
+    int price;
+    int quantity;
+};
+
 // Array of structures
 struct Shops m[5];
+
+// Array to hold the items in the user's cart
+struct CartItem cart_items[100];
+int cart_count = 0;
 
 // Function prototypes
 void signup();
@@ -38,6 +49,7 @@ void item_order(int item);
 void shop_initialize();
 void Shop(int shop_choice);
 void run_search_options();
+void generate_invoice(); // New function prototype
 
 // New function prototypes for file handling and hashing
 void save_user_to_file(struct details user);
@@ -361,39 +373,40 @@ void run_search_options() {
 // Calling shop_initialize function
 void shop_initialize()
 {
-    strcpy(m[1].shop, "Puma");
-    strcpy(m[1].item1, "puma sneaker V2");
-    strcpy(m[1].item2, "mens dryflex");
-    strcpy(m[1].item3, "one8x puma");
-    m[1].first = 3499;
-    m[1].second = 2999;
-    m[1].third = 5999;
+    strcpy(m[1].shop, "Aarong");
+    strcpy(m[1].item1, "Cotton Panjabi");
+    strcpy(m[1].item2, "Handloom Saree");
+    strcpy(m[1].item3, "Leather Bag");
+    m[1].first = 1450;     // Panjabi
+    m[1].second = 2200;    // Saree
+    m[1].third = 3200;     // Bag
 
-    strcpy(m[2].shop, "USA");
-    strcpy(m[2].item1, "US polo Tshirt");
-    strcpy(m[2].item2, "Shoes");
-    strcpy(m[2].item3, "shirt");
-    m[2].first = 999;
-    m[2].second = 2000;
-    m[2].third = 1499;
+    strcpy(m[2].shop, "Yellow");
+    strcpy(m[2].item1, "Casual Shirt");
+    strcpy(m[2].item2, "Jeans Pant");
+    strcpy(m[2].item3, "Graphic Tee");
+    m[2].first = 1250;     // Shirt
+    m[2].second = 1800;    // Jeans
+    m[2].third = 850;      // Tee
 
-    strcpy(m[3].shop, "WROGN");
-    strcpy(m[3].item1, "Mens Watch");
-    strcpy(m[3].item2, "mens solid jacket");
-    strcpy(m[3].item3, "casual T-shirt");
-    m[3].first = 2000;
-    m[3].second = 2239;
-    m[3].third = 799;
+    strcpy(m[3].shop, "Ecstasy");
+    strcpy(m[3].item1, "Formal Shirt");
+    strcpy(m[3].item2, "Blazer");
+    strcpy(m[3].item3, "Slim Fit Trousers");
+    m[3].first = 1650;     // Shirt
+    m[3].second = 4500;    // Blazer
+    m[3].third = 1900;     // Trousers
 }
+
 
 // Shop function
 void shop()
 {
     shop_initialize();
     
-    printf("\n\nPlease Choose the Shop \n\n1) %s\n2) %s\n3) %s",
+    printf("\n\nPlease Choose the Shop : \n\n1) %s\n2) %s\n3) %s",
             m[1].shop, m[2].shop, m[3].shop);
-    printf("\n4) Exit\n\nPlease select the shop\t");
+    printf("\n4) Exit\n\nPlease select the shop : ");
 
     if (scanf("%d", &shop_choice) != 1) {
         while (getchar() != '\n');
@@ -414,7 +427,6 @@ void shop()
 // Function to display items in a shop
 void Shop(int shop_choice)
 {
-    total = 0;
     while (1) {
         printf("\n\nList of items available in %s\n\n1) %s --> %d\n",
                 m[shop_choice].shop, m[shop_choice].item1, m[shop_choice].first);
@@ -427,26 +439,44 @@ void Shop(int shop_choice)
             printf("Please Enter a valid choice\n\n");
             continue;
         }
-
-        if (item_choice == 1) {
-            printf("Please Enter the Count of %s\t", m[shop_choice].item1);
-            scanf("%d", &n);
-            total = total + (n * m[shop_choice].first);
-        } else if (item_choice == 2) {
-            printf("Please Enter the Count of %s : ", m[shop_choice].item2);
-            scanf("%d", &n);
-            total = total + (n * m[shop_choice].second);
-        } else if (item_choice == 3) {
-            printf("Please Enter the Count of %s : ", m[shop_choice].item3);
-            scanf("%d", &n);
-            total = total + (n * m[shop_choice].third);
-        } else if (item_choice == 4) {
-            cart();
-            return;
-        } else if (item_choice == 5) {
-            return; // Return to previous menu
-        } else {
-            printf("Please Enter a valid choice\n\n");
+        
+        int quantity = 0;
+        switch (item_choice) {
+            case 1:
+                printf("Please Enter the Count of %s : ", m[shop_choice].item1);
+                scanf("%d", &quantity);
+                // Add item to cart
+                strcpy(cart_items[cart_count].name, m[shop_choice].item1);
+                cart_items[cart_count].price = m[shop_choice].first;
+                cart_items[cart_count].quantity = quantity;
+                cart_count++;
+                break;
+            case 2:
+                printf("Please Enter the Count of %s : ", m[shop_choice].item2);
+                scanf("%d", &quantity);
+                // Add item to cart
+                strcpy(cart_items[cart_count].name, m[shop_choice].item2);
+                cart_items[cart_count].price = m[shop_choice].second;
+                cart_items[cart_count].quantity = quantity;
+                cart_count++;
+                break;
+            case 3:
+                printf("Please Enter the Count of %s : ", m[shop_choice].item3);
+                scanf("%d", &quantity);
+                // Add item to cart
+                strcpy(cart_items[cart_count].name, m[shop_choice].item3);
+                cart_items[cart_count].price = m[shop_choice].third;
+                cart_items[cart_count].quantity = quantity;
+                cart_count++;
+                break;
+            case 4:
+                cart();
+                return;
+            case 5:
+                return;
+            default:
+                printf("Please Enter a valid choice\n\n");
+                break;
         }
     }
 }
@@ -454,7 +484,6 @@ void Shop(int shop_choice)
 // Items function
 void items()
 {
-    total = 0;
     shop_initialize();
     while (1) {
         printf("\n\nPlease choose the item\n\n");
@@ -496,19 +525,29 @@ void item_order(int item)
         shop_id = 3;
 
     int item_index = (item - 1) % 3 + 1;
+    int quantity = 0;
 
     if (item_index == 1) {
         printf("Please Enter the Count of %s : ", m[shop_id].item1);
-        scanf("%d", &n);
-        total = total + (n * m[shop_id].first);
+        scanf("%d", &quantity);
+        strcpy(cart_items[cart_count].name, m[shop_id].item1);
+        cart_items[cart_count].price = m[shop_id].first;
+        cart_items[cart_count].quantity = quantity;
+        cart_count++;
     } else if (item_index == 2) {
         printf("Please Enter the Count of %s : ", m[shop_id].item2);
-        scanf("%d", &n);
-        total = total + (n * m[shop_id].second);
+        scanf("%d", &quantity);
+        strcpy(cart_items[cart_count].name, m[shop_id].item2);
+        cart_items[cart_count].price = m[shop_id].second;
+        cart_items[cart_count].quantity = quantity;
+        cart_count++;
     } else if (item_index == 3) {
         printf("Please Enter the Count of %s : ", m[shop_id].item3);
-        scanf("%d", &n);
-        total = total + (n * m[shop_id].third);
+        scanf("%d", &quantity);
+        strcpy(cart_items[cart_count].name, m[shop_id].item3);
+        cart_items[cart_count].price = m[shop_id].third;
+        cart_items[cart_count].quantity = quantity;
+        cart_count++;
     }
 }
 
@@ -517,32 +556,70 @@ void cart()
 {
     char confirm_order;
 
-    printf("\n\n\n\n\t*********************************Cart*********************************");
-    printf("\n\nYour Total Order Amount is : %d\n", total);
+    printf("\n\n\n\n*********************************Cart*********************************");
+
+    // Display a summary of the items in the cart
+    int grand_total = 0;
+    printf("\n\n\t********************* Order Summary *********************\n\n");
+    printf("%-25s %-10s %-10s %-10s\n", "Item Name", "Price", "Qty", "Subtotal");
+    printf("----------------------------------------------------------\n");
+
+    for (int i = 0; i < cart_count; i++) {
+        int subtotal = cart_items[i].price * cart_items[i].quantity;
+        printf("%-25s %-10d %-10d %-10d\n", cart_items[i].name, cart_items[i].price, cart_items[i].quantity, subtotal);
+        grand_total += subtotal;
+    }
+    
+    printf("----------------------------------------------------------\n");
+    printf("%-45s %-10d\n", "TOTAL AMOUNT:", grand_total);
+    printf("\n\t***************************************************\n\n");
+
+    // Ask for final confirmation
     printf("\n\nDo you wish to order (y/n) : ");
     
     while (getchar() != '\n'); 
     scanf(" %c", &confirm_order);
 
     if (confirm_order == 'y' || confirm_order == 'Y') {
+        generate_invoice(); // Call the new invoice function here
         printf("\n\nThank You for your Order");
         printf("\nYour item is on the way. Welcome again \n\n");
+        
+        // Reset the cart for the next order
+        cart_count = 0;
         total = 0;
-        // The function will return to the previous menu
     } else if (confirm_order == 'n' || confirm_order == 'N') {
         printf("To cancel Your Order = 1\nTo Exit = 0\nSelect option : ");
         scanf("%d", &confirm);
         if (confirm == 1) {
             printf("\n\nOops! Your item is cancelled!! Exiting..\n\n");
             printf("Thank You visit again!\n");
+            cart_count = 0;
             total = 0;
-            // The function will return to the previous menu
         } else {
             printf("\n\n\t\t************Thank You******************\n\n");
-            // The function will return to the previous menu
         }
     } else {
         printf("\n\nPlease Enter the correct choice\n\n");
         cart();
     }
+}
+
+// New function to generate and display the invoice
+void generate_invoice() {
+    int grand_total = 0;
+    
+    printf("\n\n************************** INVOICE **************************\n\n");
+    printf("%-25s %-10s %-10s %-10s\n", "Item Name", "Price", "Qty", "Subtotal");
+    printf("----------------------------------------------------------\n");
+
+    for (int i = 0; i < cart_count; i++) {
+        int subtotal = cart_items[i].price * cart_items[i].quantity;
+        printf("%-25s %-10d %-10d %-10d\n", cart_items[i].name, cart_items[i].price, cart_items[i].quantity, subtotal);
+        grand_total += subtotal;
+    }
+    
+    printf("----------------------------------------------------------\n");
+    printf("%-45s %-10d\n", "TOTAL AMOUNT:", grand_total);
+    printf("\n\t***************************************************\n\n");
 }
