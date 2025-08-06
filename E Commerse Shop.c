@@ -1,14 +1,15 @@
-// C Program to implement Shopping Cart
+// C Program to implement Shopping Cart with Labeled File I/O
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <stdlib.h>
 
 // Structure for user details
 struct details {
     char uname[50];
     int age;
-    char password[100];
+    char password[100]; // This will store the hashed password
     char email[100];
     char mobile[15];
 };
@@ -25,11 +26,9 @@ struct Shops {
 
 // Array of structures
 struct Shops m[5];
-struct details s[100];
 
 // Function prototypes
 void signup();
-void account_validate();
 int validate();
 void login();
 void cart();
@@ -38,6 +37,12 @@ void items();
 void item_order(int item);
 void shop_initialize();
 void Shop(int shop_choice);
+void run_search_options();
+
+// New function prototypes for file handling and hashing
+void save_user_to_file(struct details user);
+int is_email_exist(char* email);
+void hash_password(char* password, char* hashed_password);
 
 // Global variables
 char t_name[100], t_password1[100];
@@ -57,7 +62,12 @@ int main()
         printf("\n3)EXIT");
 
         printf("\n\n\nEnter your choice : ");
-        scanf("%d", &choice);
+        if (scanf("%d", &choice) != 1) {
+            // Handle invalid input (non-integer)
+            while (getchar() != '\n'); 
+            printf("\n\nPlease enter a valid choice!!\n");
+            continue; // Continue to the next iteration of the while loop
+        }
 
         switch (choice) {
             case 1: {
@@ -80,17 +90,74 @@ int main()
     }
 }
 
+// Simple hashing function for demonstration
+void hash_password(char* password, char* hashed_password) {
+    char key[] = "my_secret_key";
+    int key_len = strlen(key);
+    int pass_len = strlen(password);
+
+    for (int i = 0; i < pass_len; i++) {
+        hashed_password[i] = password[i] ^ key[i % key_len];
+    }
+    hashed_password[pass_len] = '\0';
+}
+
+// Function to check if an email already exists in the file
+int is_email_exist(char* email) {
+    FILE* fp = fopen("users.dat", "r");
+    if (fp == NULL) {
+        return 0;
+    }
+
+    char line[200];
+    int found = 0;
+    
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "email:", 6) == 0) {
+            char key[50], value[150];
+            sscanf(line, "%s %[^\n]", key, value);
+            if (strcmp(value, email) == 0) {
+                found = 1;
+                break;
+            }
+        }
+    }
+
+    fclose(fp);
+    return found;
+}
+
+// Function to save user details to a file
+void save_user_to_file(struct details user) {
+    FILE* fp = fopen("users.dat", "a");
+    if (fp == NULL) {
+        printf("Error: Could not open user data file.\n");
+        return;
+    }
+    
+    char hashed_pass[100];
+    hash_password(user.password, hashed_pass);
+
+    fprintf(fp, "name: %s\n", user.uname);
+    fprintf(fp, "age: %d\n", user.age);
+    fprintf(fp, "password: %s\n", hashed_pass);
+    fprintf(fp, "email: %s\n", user.email);
+    fprintf(fp, "mobile: %s\n", user.mobile);
+    fprintf(fp, "---\n");
+
+    fclose(fp);
+}
+
 // Signup function
 void signup()
 {
     printf("\n\n\t******************Welcome to Signup Page*****************\n\n");
 
-    // Clear the input buffer before reading the name
     while (getchar() != '\n'); 
     
     printf("\tEnter Your name : ");
     fgets(t_name, sizeof(t_name), stdin);
-    t_name[strcspn(t_name, "\n")] = 0; // Remove the newline character
+    t_name[strcspn(t_name, "\n")] = 0;
 
     printf("\tEnter Your Email : ");
     scanf("%s", t_email);
@@ -109,18 +176,27 @@ void signup()
 
     x = validate();
     if (x == 1) {
-        account_validate();
-        login();
+        if (is_email_exist(t_email)) {
+            printf("\n\nAccount Already Existed. Please Login !\n\n");
+        } else {
+            struct details new_user;
+            strcpy(new_user.uname, t_name);
+            new_user.age = t_age;
+            strcpy(new_user.password, t_password1);
+            strcpy(new_user.email, t_email);
+            strcpy(new_user.mobile, t_mobile);
+
+            save_user_to_file(new_user);
+            printf("\n\n\nAccount Successfully Created!\n\n");
+        }
     } else {
         printf("\nSignup failed. Please try again.\n\n");
-        main();
     }
 }
 
-// Validation function
+// Validation function (remains mostly the same)
 int validate()
 {
-    // Name Validation
     for (i = 0; t_name[i] != '\0'; i++) {
         if (!((t_name[i] >= 'a' && t_name[i] <= 'z') || (t_name[i] >= 'A' && t_name[i] <= 'Z') || t_name[i] == '.' || t_name[i] == ' ')) {
             printf("\n\nPlease enter a valid Name!\n\n");
@@ -128,7 +204,6 @@ int validate()
         }
     }
     
-    // Email Validation
     count = 0;
     for (i = 0; t_email[i] != '\0'; i++) {
         if (t_email[i] == '@' || t_email[i] == '.')
@@ -139,7 +214,6 @@ int validate()
         return 0;
     }
     
-    // Password Validation
     if (strcmp(t_password1, t_password2) != 0) {
         printf("\n\nPassword Mismatch\n\n");
         return 0;
@@ -166,13 +240,11 @@ int validate()
         return 0;
     }
 
-    // Age Validation
     if (t_age <= 0) {
         printf("\n\nPlease Enter a valid age\n\n");
         return 0;
     }
 
-    // Mobile Number Validation (for Bangladeshi numbers)
     if (strlen(t_mobile) == 14 && strncmp(t_mobile, "+880", 4) == 0) {
         success = 1;
     } else if (strlen(t_mobile) == 11 && strncmp(t_mobile, "01", 2) == 0) {
@@ -189,27 +261,7 @@ int validate()
     return 0;
 }
 
-// Account Validation
-void account_validate()
-{
-    for (i = 0; i < 100; i++) {
-        if (!strcmp(t_email, s[i].email)) {
-            printf("\n\nAccount Already Existed. Please Login !\n\n");
-            return;
-        }
-    }
-    
-    // If no account exists, create a new one
-    strcpy(s[j].uname, t_name);
-    s[j].age = t_age;
-    strcpy(s[j].password, t_password1);
-    strcpy(s[j].email, t_email);
-    strcpy(s[j].mobile, t_mobile);
-    j++;
-    printf("\n\n\nAccount Successfully Created!\n\n");
-}
-
-// Login function
+// Login function (fixed infinite loop)
 void login()
 {
     printf("\n\n\t******************Welcome to Login Page********************\n\n");
@@ -219,47 +271,91 @@ void login()
     printf("\t Enter Your Password: ");
     scanf("%s", t_password1);
 
-    for (i = 0; i < 100; i++) {
-        if (!strcmp(s[i].email, t_email)) {
-            if (!strcmp(s[i].password, t_password1)) {
-                printf("\n\nWelcome %s, ", s[i].uname);
-                printf("You are successfully logged in\n\n");
-                printf("We Provide two ways of search : \n");
-                printf("1) Search By Shop\n");
-                printf("2) Search by item\n");
-                printf("3) Exit\n\n");
-                printf("Please Enter your choice : ");
-                scanf("%d", &search_choice);
+    FILE* fp = fopen("users.dat", "r");
+    if (fp == NULL) {
+        printf("\n\nAccount doesn't exist. Please signup!!\n\n");
+        return;
+    }
 
-                switch (search_choice) {
-                    case 1: {
-                        shop();
-                        break;
-                    }
-                    case 2: {
-                        items();
-                        break;
-                    }
-                    case 3: {
-                        main();
-                        break;
-                    }
-                    default: {
-                        printf("Please Enter a valid choice!!!\n\n");
-                        break;
-                    }
+    char file_uname[50], file_hashed_pass[100], file_email[100];
+    char line[200];
+    int user_found = 0;
+    char hashed_input_pass[100];
+
+    hash_password(t_password1, hashed_input_pass);
+
+    while (fgets(line, sizeof(line), fp)) {
+        char key[50], value[150];
+        sscanf(line, "%s %[^\n]", key, value);
+        
+        if (strcmp(key, "name:") == 0) {
+            strcpy(file_uname, value);
+        } else if (strcmp(key, "password:") == 0) {
+            strcpy(file_hashed_pass, value);
+        } else if (strcmp(key, "email:") == 0) {
+            strcpy(file_email, value);
+            
+            if (strcmp(file_email, t_email) == 0) {
+                user_found = 1;
+            }
+        } else if (strcmp(key, "---") == 0) {
+            if (user_found) {
+                if (strcmp(file_hashed_pass, hashed_input_pass) == 0) {
+                    printf("\n\nWelcome %s, ", file_uname);
+                    printf("You are successfully logged in\n\n");
+                    fclose(fp);
+                    run_search_options();
+                    return;
+                } else {
+                    printf("\n\nInvalid Password!!\n");
+                    fclose(fp);
+                    return; // Return to main menu
                 }
+            }
+            user_found = 0; // Reset for next user
+        }
+    }
+    fclose(fp);
+    
+    if (!user_found) {
+        printf("\n\nAccount doesn't exist, Please signup!!\n\n");
+    }
+}
+
+// New function to handle post-login search options
+void run_search_options() {
+    while(1) {
+        printf("\n\nWe Provide two ways of search : \n");
+        printf("1) Search By Shop\n");
+        printf("2) Search by item\n");
+        printf("3) Logout\n\n");
+        printf("Please Enter your choice : ");
+        
+        if (scanf("%d", &search_choice) != 1) {
+            while (getchar() != '\n');
+            printf("Please Enter a valid choice!!!\n\n");
+            continue;
+        }
+
+        switch (search_choice) {
+            case 1: {
+                shop();
+                break;
+            }
+            case 2: {
+                items();
+                break;
+            }
+            case 3: {
+                printf("\n\tYou have been logged out.\n");
                 return;
-            } else {
-                printf("\n\nInvalid Password!!\n");
-                printf("Please Enter the correct password\n\n");
-                login();
-                return;
+            }
+            default: {
+                printf("Please Enter a valid choice!!!\n\n");
+                break;
             }
         }
     }
-    printf("\n\nAccount doesn't exist, Please signup!!\n\n");
-    main();
 }
 
 // Calling shop_initialize function
@@ -296,15 +392,20 @@ void shop()
     shop_initialize();
     
     printf("\n\nPlease Choose the Shop \n\n1) %s\n2) %s\n3) %s",
-           m[1].shop, m[2].shop, m[3].shop);
+            m[1].shop, m[2].shop, m[3].shop);
     printf("\n4) Exit\n\nPlease select the shop\t");
 
-    scanf("%d", &shop_choice);
+    if (scanf("%d", &shop_choice) != 1) {
+        while (getchar() != '\n');
+        printf("Please Enter a valid choice\n\n");
+        return;
+    }
+    
     if (shop_choice > 4) {
         printf("Please Enter a valid choice\n\n");
         shop();
     } else if (shop_choice == 4) {
-        main();
+        return;
     } else {
         Shop(shop_choice);
     }
@@ -316,11 +417,16 @@ void Shop(int shop_choice)
     total = 0;
     while (1) {
         printf("\n\nList of items available in %s\n\n1) %s --> %d\n",
-               m[shop_choice].shop, m[shop_choice].item1, m[shop_choice].first);
+                m[shop_choice].shop, m[shop_choice].item1, m[shop_choice].first);
         printf("2) %s --> %d\n3) %s --> %d\n",
-               m[shop_choice].item2, m[shop_choice].second, m[shop_choice].item3, m[shop_choice].third);
+                m[shop_choice].item2, m[shop_choice].second, m[shop_choice].item3, m[shop_choice].third);
         printf("4) Cart\n5) Exit\n\nPlease Enter Your Choice : ");
-        scanf("%d", &item_choice);
+        
+        if (scanf("%d", &item_choice) != 1) {
+            while (getchar() != '\n');
+            printf("Please Enter a valid choice\n\n");
+            continue;
+        }
 
         if (item_choice == 1) {
             printf("Please Enter the Count of %s\t", m[shop_choice].item1);
@@ -338,15 +444,12 @@ void Shop(int shop_choice)
             cart();
             return;
         } else if (item_choice == 5) {
-            shop();
-            return;
+            return; // Return to previous menu
         } else {
             printf("Please Enter a valid choice\n\n");
         }
     }
 }
-
-
 
 // Items function
 void items()
@@ -362,14 +465,19 @@ void items()
         printf("9) %s\t--> %d\n10) Cart\n", m[3].item3, m[3].third);
         printf("11) Exit");
         printf("\nPlease Enter Your Choice : ");
-        scanf("%d", &item);
+        
+        if (scanf("%d", &item) != 1) {
+            while (getchar() != '\n');
+            printf("Please Enter a valid choice\n\n");
+            continue;
+        }
+
         if (item > 11 || item < 1) {
             printf("Please Enter a valid choice\n\n");
         } else if (item == 10) {
             cart();
             return;
         } else if (item == 11) {
-            main();
             return;
         } else {
             item_order(item);
@@ -387,15 +495,17 @@ void item_order(int item)
     else
         shop_id = 3;
 
-    if ((item % 3) == 1 || (item == 1)) {
+    int item_index = (item - 1) % 3 + 1;
+
+    if (item_index == 1) {
         printf("Please Enter the Count of %s : ", m[shop_id].item1);
         scanf("%d", &n);
         total = total + (n * m[shop_id].first);
-    } else if ((item % 3) == 2 || (item == 2)) {
+    } else if (item_index == 2) {
         printf("Please Enter the Count of %s : ", m[shop_id].item2);
         scanf("%d", &n);
         total = total + (n * m[shop_id].second);
-    } else if ((item % 3) == 0 || (item == 3)) {
+    } else if (item_index == 3) {
         printf("Please Enter the Count of %s : ", m[shop_id].item3);
         scanf("%d", &n);
         total = total + (n * m[shop_id].third);
@@ -403,7 +513,6 @@ void item_order(int item)
 }
 
 // Cart function
-// Function to implement the cart
 void cart()
 {
     char confirm_order;
@@ -411,27 +520,26 @@ void cart()
     printf("\n\n\n\n\t*********************************Cart*********************************");
     printf("\n\nYour Total Order Amount is : %d\n", total);
     printf("\n\nDo you wish to order (y/n) : ");
-    // Use scanf to read a character
+    
+    while (getchar() != '\n'); 
     scanf(" %c", &confirm_order);
 
     if (confirm_order == 'y' || confirm_order == 'Y') {
         printf("\n\nThank You for your Order");
         printf("\nYour item is on the way. Welcome again \n\n");
-        // Reset the total for the next user
         total = 0;
-        main();
+        // The function will return to the previous menu
     } else if (confirm_order == 'n' || confirm_order == 'N') {
         printf("To cancel Your Order = 1\nTo Exit = 0\nSelect option : ");
         scanf("%d", &confirm);
         if (confirm == 1) {
             printf("\n\nOops! Your item is cancelled!! Exiting..\n\n");
             printf("Thank You visit again!\n");
-            // Reset the total for the next user
             total = 0;
-            main();
+            // The function will return to the previous menu
         } else {
             printf("\n\n\t\t************Thank You******************\n\n");
-            login();
+            // The function will return to the previous menu
         }
     } else {
         printf("\n\nPlease Enter the correct choice\n\n");
