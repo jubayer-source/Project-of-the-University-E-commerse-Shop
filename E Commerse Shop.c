@@ -49,7 +49,7 @@ void item_order(int item);
 void shop_initialize();
 void Shop(int shop_choice);
 void run_search_options();
-void generate_invoice(); // New function prototype
+void generate_invoice();
 
 // New function prototypes for file handling and hashing
 void save_user_to_file(struct details user);
@@ -174,16 +174,16 @@ void signup()
     printf("\tEnter Your Email : ");
     scanf("%s", t_email);
 
-    printf("\tEnter Password (6-12 chars, must include special chars, caps, smalls, and numbers): ");
+    printf("\tEnter Password (6-12 chars, must include special character, Uppercase, lowercase, and numbers): ");
     scanf("%s", t_password1);
 
     printf("\tConfirm Password : ");
     scanf("%s", t_password2);
 
-    printf("\tEnter Your Mobile Number : ");
+    printf("\tEnter Your Mobile Number (01...) : ");
     scanf("%s", t_mobile);
 
-    printf("\tEnter Your Age : ");
+    printf("\tEnter Your Age (10-80) : ");
     scanf("%d", &t_age);
 
     x = validate();
@@ -202,40 +202,52 @@ void signup()
             printf("\n\n\nAccount Successfully Created!\n\n");
         }
     } else {
-        printf("\nSignup failed. Please try again.\n\n");
+        printf("\nSignup failed. Please fix the errors listed above.\n\n");
     }
 }
 
-// Validation function (remains mostly the same)
+// Validation function with comprehensive error checking
 int validate()
 {
+    int validation_status = 1;
+
+    // Validate name
     for (i = 0; t_name[i] != '\0'; i++) {
         if (!((t_name[i] >= 'a' && t_name[i] <= 'z') || (t_name[i] >= 'A' && t_name[i] <= 'Z') || t_name[i] == '.' || t_name[i] == ' ')) {
-            printf("\n\nPlease enter a valid Name!\n\n");
-            return 0;
+            printf("\n\tERROR: Please enter a valid Name! Name can only contain letters, spaces, and dots.\n");
+            validation_status = 0;
+            break;
         }
     }
-    
-    count = 0;
+
+    // Validate email
+    int at_pos = -1, dot_pos = -1;
     for (i = 0; t_email[i] != '\0'; i++) {
-        if (t_email[i] == '@' || t_email[i] == '.')
-            count++;
+        if (t_email[i] == '@') {
+            at_pos = i;
+        } else if (t_email[i] == '.') {
+            dot_pos = i;
+        }
     }
-    if (count < 2 || strlen(t_email) < 5) {
-        printf("\n\nPlease Enter a Valid E-Mail\n\n");
-        return 0;
-    }
-    
-    if (strcmp(t_password1, t_password2) != 0) {
-        printf("\n\nPassword Mismatch\n\n");
-        return 0;
-    }
-    
-    if (strlen(t_password1) < 6 || strlen(t_password1) > 12) {
-        printf("\nYour Password length must be between 6 to 12 characters.\n\n");
-        return 0;
+    if (at_pos < 1 || dot_pos < at_pos + 2 || dot_pos == strlen(t_email) - 1) {
+        printf("\n\tERROR: Please enter a valid E-Mail address (e.g., example@domain.com).\n");
+        validation_status = 0;
     }
 
+
+    // Validate password length
+    if (strlen(t_password1) < 6 || strlen(t_password1) > 12) {
+        printf("\n\tERROR: Your password length must be between 6 to 12 characters.\n");
+        validation_status = 0;
+    }
+    
+    // Validate password match
+    if (strcmp(t_password1, t_password2) != 0) {
+        printf("\n\tERROR: Password Mismatch. The confirmed password does not match.\n");
+        validation_status = 0;
+    }
+    
+    // Validate password complexity
     caps = 0, Small = 0, numbers = 0, special = 0;
     for (i = 0; t_password1[i] != '\0'; i++) {
         if (t_password1[i] >= 'A' && t_password1[i] <= 'Z')
@@ -248,29 +260,31 @@ int validate()
             special++;
     }
     if (caps < 1 || Small < 1 || numbers < 1 || special < 1) {
-        printf("\n\nPlease Enter a strong password. It must contain at least one uppercase, lowercase, number, and special character (@, &, #, *, !, $, %%).\n\n");
-        return 0;
+        printf("\n\tERROR: Please enter a strong password. It must contain at least one uppercase, lowercase, number, and special character (@, &, #, *, !, $, %%).\n");
+        validation_status = 0;
     }
 
-    if (t_age <= 0) {
-        printf("\n\nPlease Enter a valid age\n\n");
-        return 0;
+    // Validate age
+    if (t_age < 10 || t_age > 80) {
+        printf("\n\tERROR: Please enter a valid age between 10 and 80.\n");
+        validation_status = 0;
     }
 
-    if (strlen(t_mobile) == 14 && strncmp(t_mobile, "+880", 4) == 0) {
-        success = 1;
-    } else if (strlen(t_mobile) == 11 && strncmp(t_mobile, "01", 2) == 0) {
-        success = 1;
+    // Validate mobile number
+    if (strlen(t_mobile) != 11 || strncmp(t_mobile, "01", 2) != 0) {
+        printf("\n\tERROR: Please enter a valid Bangladeshi Mobile Number (e.g., 01*********). The number must be 11 digits long and start with '01'.\n");
+        validation_status = 0;
     } else {
-        printf("\n\nPlease Enter a valid Bangladeshi Mobile Number (e.g., +8801... or 01...)\n\n");
-        return 0;
-    }
-
-    if (success == 1) {
-        return 1;
+        for (i = 0; i < strlen(t_mobile); i++) {
+            if (!isdigit(t_mobile[i])) {
+                printf("\n\tERROR: Mobile number must contain only digits.\n");
+                validation_status = 0;
+                break;
+            }
+        }
     }
     
-    return 0;
+    return validation_status;
 }
 
 // Login function (fixed infinite loop)
@@ -406,7 +420,7 @@ void shop()
     
     printf("\n\nPlease Choose the Shop : \n\n1) %s\n2) %s\n3) %s",
             m[1].shop, m[2].shop, m[3].shop);
-    printf("\n4) Exit\n\nPlease select the shop : ");
+    printf("\n4) Exit\n\nPlease select the shop\t");
 
     if (scanf("%d", &shop_choice) != 1) {
         while (getchar() != '\n');
@@ -556,7 +570,7 @@ void cart()
 {
     char confirm_order;
 
-    printf("\n\n\n\n*********************************Cart*********************************");
+    printf("\n\n\n\n\t*********************************Cart*********************************");
 
     // Display a summary of the items in the cart
     int grand_total = 0;
@@ -609,7 +623,7 @@ void cart()
 void generate_invoice() {
     int grand_total = 0;
     
-    printf("\n\n************************** INVOICE **************************\n\n");
+    printf("\n\n\t********************* INVOICE *********************\n\n");
     printf("%-25s %-10s %-10s %-10s\n", "Item Name", "Price", "Qty", "Subtotal");
     printf("----------------------------------------------------------\n");
 
