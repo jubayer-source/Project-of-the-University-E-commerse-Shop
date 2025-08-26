@@ -1,0 +1,44 @@
+shop: Aarong
+item1: Cotton Panjabi
+price1: 1450
+quantity1: 3
+item2: Handloom Saree
+price2: 2200
+quantity2: 0
+item3: Leather Bag
+price3: 3200
+quantity3: 0
+---
+shop: Yellow
+item1: Casual Shirt
+price1: 1250
+quantity1: 10
+item2: Jeans Pant
+price2: 1800
+quantity2: 7
+item3: Graphic Tee
+price3: 850
+quantity3: 2
+---
+shop: Ecstasy
+item1: Formal Shirt
+price1: 1650
+quantity1: 8
+item2: Blazer
+price2: 4500
+quantity2: 4
+item3: Slim Fit Trousers
+price3: 1900
+quantity3: 6
+---
+shop: Easy
+item1: T Shirt
+price1: 1650
+quantity1: 4
+item2: Tops
+price2: 4500
+quantity2: 4
+item3: Short Pent
+price3: 1900
+quantity3: 6
+---
